@@ -1,5 +1,19 @@
 import numpy as np
 import pandas as pd
+import deeplabcut
+import os
+
+def deeplabcut_analyze_video(dlc_analyze_path, video_path):
+    config_path = "/content/drive/Shareddrives/dlc_udape/automated_analysis/config.yaml"
+    dst_directory = os.path.join(dlc_analyze_path, video_path.split("/")[-2])
+    if not os.path.exists(dst_directory):
+        os.mkdir(dst_directory)
+
+    deeplabcut.analyze_videos(config_path, [video_path], videotype='mp4', save_as_csv=True, destfolder = dst_directory, cropping= [700, 1250, 300, 900], dynamic=(True, .5, 10))
+    deeplabcut.filterpredictions(config_path, [video_path], destfolder = dst_directory)
+    deeplabcut.analyze_videos_converth5_to_csv(dlc_analyze_path, videotype='mp4')
+
+    return dst_directory
 
 def process_csv_to_dataframe_filter(filepath):
     path = str(filepath + ".csv")
