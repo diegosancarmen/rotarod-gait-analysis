@@ -7,6 +7,4 @@ This program uses a trained DeepLabCut model to perform pose estimation on recor
 
 This work is used in the following paper:
 
-Dela Cruz, H. L., Dela Cruz, E. L., Zurhellen, C. J., York, H. T., Baun, J. A., Dela Cruz, J. L., & Dela Cruz, J. S. (2020). New insights
-underlying the early events of dopaminergic dysfunction in Parkinson’s Disease. In *bioRxiv (Cold Spring Harbor Laboratory).
-Cold Spring Harbor Laboratory*. https://doi.org/10.1101/2020.09.27.313957
+Dela Cruz, H. L., Dela Cruz, E. L., Zurhellen, C. J., York, H. T., Baun, J. A., Dela Cruz, J. L., & Dela Cruz, J. S. (2020). New insights underlying the early events of dopaminergic dysfunction in Parkinson’s Disease. In *bioRxiv (Cold Spring Harbor Laboratory). Cold Spring Harbor Laboratory*. https://doi.org/10.1101/2020.09.27.313957

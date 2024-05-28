@@ -1,3 +1,9 @@
+"""
+cd /home/coeguest/hdelacruz/DeepLabCut
+conda activate DEEPLABCUT
+python rotarod-gait-analysis/experiments/compare_runs.py --video_folder /home/coeguest/hdelacruz/DeepLabCut/Experiment2
+"""
+
 import os
 import csv
 import pandas as pd
@@ -7,33 +13,44 @@ import matplotlib.pyplot as plt
 from scipy.signal import argrelextrema
 from statistics import mean
 os.environ["DLClight"]="True"
-import deeplabcut
-import dlc2kinematics
-import argparse
 
-from lib.primary_analysis import deeplabcut_analyze_video, process_csv_to_dataframe_filter, add_distance_columns, add_rod_columns
-from lib.generate_scores import add_extrema_columns, compute_and_add_joint_extrema, calculate_and_append_data_means
+# import deeplabcut
+# import dlc2kinematics
+
+import argparse
+import sys
+
+sys.path.append("/home/coeguest/hdelacruz/DeepLabCut/rotarod-gait-analysis")
+
+from lib.gait_signatures.primary_analysis import deeplabcut_analyze_video, process_csv_to_dataframe_filter, add_distance_columns, add_rod_columns
+from lib.gait_signatures.generate_scores import add_extrema_columns, compute_and_add_joint_extrema, calculate_and_append_data_means, calculate_joint_results, pcnt_change
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--video_folder", 
                     help="path to load rotarod run videos")
-parser.add_argument("--comparison_csv", 
-                    help="path to .csv containing list of rotarod run comparisons")
 parser.add_argument("--output_folder", 
-                    help="path to save gait analysis computation results")
+                    help="path to load rotarod run videos", default = None)
 
 args = parser.parse_args()
 
-trial_name = "Testing" # [UPDATE]
+trial_name = args.video_folder.split("/")[-1]
+if args.output_folder is None:
+    output_folder = args.video_folder + "_output"
+else:
+    output_folder = args.output_folder
+    
+comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
 
-data_folder_path = os.path.join("/content/drive/MyDrive/DLC Analyses", trial_name)
-dlc_analyze_path = os.path.join(data_folder_path, "deeplabcut.analyze")
+config_yaml = "/home/coeguest/hdelacruz/DeepLabCut/automated_analysis/config.yaml"
+dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
 
-if os.path.exists(data_folder_path):
-    shutil.rmtree(data_folder_path)
-    os.mkdir(data_folder_path)
-    os.mkdir(dlc_analyze_path)
+os.makedirs(output_folder, exist_ok = True)
+os.makedirs(dlc_analyze_path, exist_ok = True)
 
+# if os.path.exists(output_folder):
+#     shutil.rmtree(output_folder)
+#     os.mkdir(output_folder)
+#     os.mkdir(dlc_analyze_path)
 
 # Column names
 column_names = [
@@ -51,187 +68,121 @@ column_names = [
 ]
 
 # Path to save the CSV file
-stats_path = os.path.join(data_folder_path, 'secondary_stats.csv')
+stats_path = os.path.join(output_folder, 'gait_metrics.csv')
 
 # Create the CSV file and write the header row
 with open(stats_path, 'w', newline='') as csv_file:
     writer = csv.writer(csv_file)
     writer.writerow(column_names)
 
-# Specify the directory path
-raw_videos_path = "/content/drive/MyDrive/Fall 2023 (MARC)/DLC/Experiment1" # [UPDATE]
-
-# Initialize an empty list to store the file names
-mp4_files = []
-
 # Recursively search for .mp4 files in the root_directory and its subdirectories
-for root, dirs, files in os.walk(raw_videos_path):
-    for filename in files:
-        if filename.lower().endswith(".mp4") and "resnet" not in filename.lower() and "shuffle" not in filename.lower():
-            # Append the file path to the list
-            mp4_files.append(filename)
+mp4_files = list(filter(lambda f: f.endswith('.mp4'), os.listdir(args.video_folder)))
 
-compare_csv = "/content/drive/MyDrive/Fall 2023 (MARC)/DLC/Experiment1/comparison_id.csv"
-compare_id_df = pd.read_csv(compare_csv)
+compare_id_df = pd.read_csv(comparison_csv)
+
+dataframe_list = []
 
 for index, row in compare_id_df.iterrows():
     base = row[0]
     samp = row[1]
 
-    # Find matching file paths for the base and samp values
-    matching_paths_base = []
-    matching_paths_samp = []
+    base_vid_path = os.path.join(args.video_folder, base + ".mp4")
+    samp_vid_path = os.path.join(args.video_folder, samp + ".mp4")      
 
-    for file_path in mp4_files:
-        if all(part.strip() in file_path for part in base.split(',')):
-            matching_paths_base.append(file_path)
-        if all(part.strip() in file_path for part in samp.split(',')):
-            matching_paths_samp.append(file_path)
+    # deeplabcut.analyze videos
+    base_dlc_analyze_path = deeplabcut_analyze_video(dlc_analyze_path, base_vid_path, config_yaml)
+    samp_dlc_analyze_path = deeplabcut_analyze_video(dlc_analyze_path, samp_vid_path, config_yaml)
+    
+    base_df = os.path.join(base_dlc_analyze_path, f"{base}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
+    samp_df = os.path.join(samp_dlc_analyze_path, f"{samp}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
 
-    # Set conditions to choose the best-matching video paths
-    def is_desired_path(path):
-        keywords = ["resnet", "shuffle", "filtered"]
-        if not any(keyword in path for keyword in keywords):
-            return True
-        return False
+    # remove outliers
+    base_filtered_df = process_csv_to_dataframe_filter(base_df)
+    samp_filtered_df = process_csv_to_dataframe_filter(samp_df)
+    
+    add_distance_columns(base_filtered_df)
+    add_rod_columns(base_filtered_df)
 
-    matching_paths_base = [path.replace(".mp4", "") for path in matching_paths_base if is_desired_path(path)]
-    matching_paths_samp = [path.replace(".mp4", "") for path in matching_paths_samp if is_desired_path(path)]
+    add_distance_columns(samp_filtered_df)
+    add_rod_columns(samp_filtered_df)
 
-    if matching_paths_base:
-        base_vid_path = os.path.join(raw_videos_path, matching_paths_base[0] + ".mp4")
-    else:
-        base_vid_path = None
+    n = 6
 
-    if matching_paths_samp:
-        samp_vid_path = os.path.join(raw_videos_path, matching_paths_samp[0] + ".mp4")
-    else:
-        samp_vid_path = None
+    # Add extrema columns for various data columns
+    columns_to_process = [
+        'leftpaw_x_d',
+        'rightpaw_x_d',
+        'rightpaw_y',
+        'leftpaw_y',
+        'tailbase_rod_y_dist',
+    ]
 
-    # Now, base_vid_path and samp_vid_path contain the best-matching video paths
+    for column in columns_to_process:
+        add_extrema_columns(base_filtered_df, column, n)
+        add_extrema_columns(samp_filtered_df, column, n)
 
-# deeplabcut.analyze videos
-base_dlc_analyze_path = deeplabcut_analyze_video(dlc_analyze_path, base_vid_path)
-samp_dlc_analyze_path = deeplabcut_analyze_video(dlc_analyze_path, samp_vid_path)
+    base_filtered_csv_path = os.path.join(base_dlc_analyze_path, [file for file in os.listdir(base_dlc_analyze_path) if base in file and 'filtered.h5' in file][0])
+    samp_filtered_csv_path = os.path.join(samp_dlc_analyze_path, [file for file in os.listdir(samp_dlc_analyze_path) if samp in file and 'filtered.h5' in file][0])
 
-def find_file_by_keywords(file_list, keywords):
+    base_idx = base_filtered_df[
+        (base_filtered_df['rightpaw_y']>(base_filtered_df['rightpaw_y_max'].mean() + 170)) | 
+        (base_filtered_df['rightpaw_y']<(base_filtered_df['rightpaw_y_min'].mean() - 170)) |
+        (base_filtered_df['leftpaw_y']>(base_filtered_df['leftpaw_y_max'].mean() + 170)) | 
+        (base_filtered_df['leftpaw_y']<(base_filtered_df['leftpaw_y_min'].mean() - 170))  
+        ].index.to_list()
+    base_filtered_df = base_filtered_df.drop(base_idx)
 
-    for file_path in file_list:
-        # Check if all keywords are present in the file path
-        if all(keyword.lower() in file_path.lower() for keyword in keywords):
-            matching_files = file_path.replace(".csv", "")
+    samp_idx = samp_filtered_df[
+        (samp_filtered_df['rightpaw_y']>(samp_filtered_df['rightpaw_y_max'].mean() + 170)) | 
+        (samp_filtered_df['rightpaw_y']<(samp_filtered_df['rightpaw_y_min'].mean() - 170)) |
+        (samp_filtered_df['leftpaw_y']>(samp_filtered_df['leftpaw_y_max'].mean() + 170)) | 
+        (samp_filtered_df['leftpaw_y']<(samp_filtered_df['leftpaw_y_min'].mean() - 170))  
+        ].index.to_list()
+    samp_filtered_df = samp_filtered_df.drop(samp_idx)
 
-    return matching_files
 
-file_list = os.listdir(base_dlc_analyze_path)
-base_keywords = [matching_paths_base[0], "filtered.csv"]
-samp_keywords = [matching_paths_samp[0], "filtered.csv"]
+    primary_stats_df_base, base_joint_angles_df = compute_and_add_joint_extrema(base_filtered_df, base_filtered_csv_path, n)
+    primary_stats_df_samp, samp_joint_angles_df = compute_and_add_joint_extrema(samp_filtered_df, samp_filtered_csv_path, n)
 
-base_filtered_csv_file = find_file_by_keywords(file_list, base_keywords)
-samp_filtered_csv_file = find_file_by_keywords(file_list, samp_keywords)
+    data_means_new_base = []
+    data_means_new_samp = []
 
-base_filtered_csv_path = os.path.join(base_dlc_analyze_path, base_filtered_csv_file)
-samp_filtered_csv_path = os.path.join(samp_dlc_analyze_path, samp_filtered_csv_file)
+    calculate_and_append_data_means(primary_stats_df_base, data_means_new_base)
+    calculate_and_append_data_means(primary_stats_df_samp, data_means_new_samp)
 
-# remove outliers
-base_filtered_df = process_csv_to_dataframe_filter(base_filtered_csv_path)
-samp_filtered_df = process_csv_to_dataframe_filter(samp_filtered_csv_path)
+    Mouse_Data_means_new_base = pd.DataFrame(data_means_new_base)
+    Mouse_Data_means_new_samp = pd.DataFrame(data_means_new_samp)
 
-# # base_filtered_df = process_csv_to_dataframe_filter(a2_base)
-# # samp_filtered_df = process_csv_to_dataframe_filter(a2_samp)
+    cog_variables = ["H_L_TP Mean", "H_R_TP Mean", "JA_L Mean", "JA_R Mean"]
+    
+    changes = [pcnt_change(Mouse_Data_means_new_base[var], Mouse_Data_means_new_samp[var]) for var in cog_variables]
 
-add_distance_columns(base_filtered_df)
-add_rod_columns(base_filtered_df)
+    # Initialize the dictionary with base and sample values
+    cog_dict = {
+        **{f"Base {var}": Mouse_Data_means_new_base[var].iloc[0] for var in cog_variables},
+        **{f"Samp {var}": Mouse_Data_means_new_samp[var].iloc[0] for var in cog_variables},
+        **{f"{cog_variables[idx]} % Diff": round(float(changes[idx].iloc[0]), 2) for idx in range(len(cog_variables))}
+    }
 
-add_distance_columns(samp_filtered_df)
-add_rod_columns(samp_filtered_df)
+    center_grav = float(changes[1] - changes[0] - changes[2] + changes[3])
 
-n = 6
+    joint_variables = {
+        'JA_L': ('left_freedom_movement', 'left_flexion', 'left_drag_factor', 'left_drag_score'),
+        'JA_R': ('right_freedom_movement', 'right_flexion', 'right_drag_factor', 'right_drag_score')
+    }
+        
+    Mouse_Data_means_new_base, Mouse_Data_means_new_samp, joint_results = calculate_joint_results(joint_variables, Mouse_Data_means_new_base, Mouse_Data_means_new_samp, base, samp, center_grav, cog_dict)
 
-# Add extrema columns for various data columns
-columns_to_process = [
-    'leftpaw_x_d',
-    'rightpaw_x_d',
-    'rightpaw_y',
-    'leftpaw_y',
-    'tailbase_rod_y_dist',
-]
+    # Convert the joint_results dictionary to a Pandas DataFrame
+    result_df = pd.DataFrame([joint_results] + [cog_dict])
+    
+    # # # Reorder columns to have 'Base ID', 'Sample ID', 'Center of Gravity' as the first three columns
+    # result_df = result_df[['Mouse ID', 'Base ID', 'Sample ID', 'Baseline Week', 'Sample Week', 'center_gravity', ] + list(joint_variables['JA_L']) + list(joint_variables['JA_R'])]
+    
+    dataframe_list.append(result_df)
 
-for column in columns_to_process:
-    add_extrema_columns(base_filtered_df, column, n)
-    add_extrema_columns(samp_filtered_df, column, n)
+# Concatenate all dataframes in the list
+combined_df = pd.concat(dataframe_list, ignore_index=True)
 
-primary_stats_df_base, base_joint_angles_df = compute_and_add_joint_extrema(base_filtered_df, base_filtered_csv_path, n)
-primary_stats_df_samp, samp_joint_angles_df = compute_and_add_joint_extrema(samp_filtered_df, samp_filtered_csv_path, n)
-
-data_means_new_base = []
-data_means_new_samp = []
-
-calculate_and_append_data_means(primary_stats_df_base, data_means_new_base)
-calculate_and_append_data_means(primary_stats_df_samp, data_means_new_samp)
-
-Mouse_Data_means_new_base = pd.DataFrame(data_means_new_base)
-Mouse_Data_means_new_samp = pd.DataFrame(data_means_new_samp)
-
-def pcnt_change(val1, val2):
-    return ((val2 - val1) / val1) * 100
-
-variables = ["H_L_TP Mean", "H_R_TP Mean", "JA_L Mean", "JA_R Mean"]
-
-changes = [pcnt_change(Mouse_Data_means_new_base[var], Mouse_Data_means_new_samp[var]) for var in variables]
-
-center_grav = float(changes[1] - changes[0] - changes[2] + changes[3])
-
-def pcnt_change_flex(val1, val2):
-    return ((val1 - val2) / val1) * 100  # Convert to percentage
-
-def id_isolate(csv_path):
-    return csv_path.split("/")[-1][:csv_path.split("/")[-1].find("DLC_dlc")]
-
-variables = {
-    'JA_L': ('left_freedom_movement', 'left_flexion', 'left_drag_factor', 'left_drag_score'),
-    'JA_R': ('right_freedom_movement', 'right_flexion', 'right_drag_factor', 'right_drag_score')
-}
-
-joint_results = {}
-
-for joint, (freedom_var, flexion_var, drag_factor_var, drag_score_var) in variables.items():
-    base_max = Mouse_Data_means_new_base[joint + " Max"]
-    samp_max = Mouse_Data_means_new_samp[joint + " Max"]
-    base_min = Mouse_Data_means_new_base[joint + ' Min']
-    samp_min = Mouse_Data_means_new_samp[joint + ' Min']
-    base_dif = base_max - base_min
-    samp_dif = samp_max - samp_min
-
-    print(f"{joint} base_max: {base_max[0]}",
-          f"{joint} samp_max: {samp_max[0]}",
-          f"{joint} base_min: {base_min[0]}",
-          f"{joint} samp_min: {samp_min[0]}",
-          f"{joint} base_dif: {base_dif[0]}",
-          f"{joint} samp_dif: {samp_dif[0]}",
-          sep = "\n")
-
-    flexion = pcnt_change_flex(base_min, samp_min)
-    freedom_movement = pcnt_change(base_dif, samp_dif)
-    drag_factor = pcnt_change(base_max, samp_max)
-    drag_score = drag_factor - flexion
-
-    joint_results[flexion_var] = f"{round(float(flexion), 1)}%"
-    joint_results[freedom_var] = f"{round(float(freedom_movement), 1)}%"
-    joint_results[drag_factor_var] = f"{round(float(drag_factor), 1)}%"
-    joint_results[drag_score_var] = f"{round(float(drag_score), 1)}%"
-
-# Add additional information to the joint_results dictionary
-joint_results['Base ID'] = id_isolate(base_filtered_csv_path)
-joint_results['Sample ID'] = id_isolate(samp_filtered_csv_path)
-joint_results['center_gravity'] = f"{round(float(center_grav), 1)}%"  # Assuming center_grav is in percentage
-
-joint_results['Baseline Week'] = int(str(joint_results['Base ID']).split("_")[1].replace("D", ""))//7
-joint_results['Sample Week'] = int(str(joint_results['Sample ID']).split("_")[1].replace("D", ""))//7
-joint_results['Mouse ID'] = str(joint_results['Base ID']).split("_")[2]
-
-# Convert the joint_results dictionary to a Pandas DataFrame
-result_df = pd.DataFrame([joint_results])
-
-# Reorder columns to have 'Base ID', 'Sample ID', 'Center of Gravity' as the first three columns
-result_df = result_df[['Mouse ID', 'Base ID', 'Sample ID', 'Baseline Week', 'Sample Week', 'center_gravity', ] + list(variables['JA_L']) + list(variables['JA_R'])]
+# Save the combined dataframe to a CSV file
+combined_df.to_csv(os.path.join(f"{args.video_folder}_output", "combined_data.csv"), index=False)
