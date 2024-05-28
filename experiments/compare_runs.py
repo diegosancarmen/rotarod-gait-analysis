@@ -1,6 +1,6 @@
 """
 cd /home/coeguest/hdelacruz/DeepLabCut
-conda activate DEEPLABCUT
+conda activate DLC_gait
 python rotarod-gait-analysis/experiments/compare_runs.py --video_folder /home/coeguest/hdelacruz/DeepLabCut/Experiment2
 """
 
@@ -14,11 +14,9 @@ from scipy.signal import argrelextrema
 from statistics import mean
 os.environ["DLClight"]="True"
 
-# import deeplabcut
-# import dlc2kinematics
-
 import argparse
 import sys
+import json
 
 sys.path.append("/home/coeguest/hdelacruz/DeepLabCut/rotarod-gait-analysis")
 
@@ -39,6 +37,22 @@ if args.output_folder is None:
 else:
     output_folder = args.output_folder
     
+# Column names
+row_headers = [
+    "Mouse ID,,,,,Paw-Tail Distance,, Ankle Joint Angle,, CoG Pre-Score,, FOM Ankle Joint Angle,,,,,,Left Leg,,,,Right Leg,,,,", 
+    "Name, Induction Week, File ID#, Frame #,, H_L_TP Mean, H_R_TP Mean, JA_L Mean, JA_R Mean,, , JA_L Max, JA_L Min, JA_L Diff, JA_R Max, JA_R Min, JA_R Diff, % Change (FOM), Flexion Decline, Drag Factor, Drag Score, % Change (FOM), Flexion Decline, Drag Factor, Drag Score,"
+    ]
+
+# Path to save the CSV file
+stats_path = os.path.join(output_folder, 'gait_metrics.csv')
+    
+# Create the CSV file and write the header rows
+with open(stats_path, 'w', newline='') as csv_file:
+    writer = csv.writer(csv_file)
+    for header_row in row_headers:
+        csv_row = header_row.split(",")
+        writer.writerow(csv_row)
+    
 comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
 
 config_yaml = "/home/coeguest/hdelacruz/DeepLabCut/automated_analysis/config.yaml"
@@ -46,34 +60,6 @@ dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
 
 os.makedirs(output_folder, exist_ok = True)
 os.makedirs(dlc_analyze_path, exist_ok = True)
-
-# if os.path.exists(output_folder):
-#     shutil.rmtree(output_folder)
-#     os.mkdir(output_folder)
-#     os.mkdir(dlc_analyze_path)
-
-# Column names
-column_names = [
-    "Mouse ID",
-    "Induction",
-    "Baseline Week",
-    "Sample Week",
-    "CoG Score",
-    "Left Leg Drag Score",
-    "Right Leg Drag Score",
-    "Left Decrease in Angle Flexion",
-    "Right Decrease in Angle Flexion",
-    "Left Decrease in Angle FOM",
-    "Right Decrease in Angle FOM"
-]
-
-# Path to save the CSV file
-stats_path = os.path.join(output_folder, 'gait_metrics.csv')
-
-# Create the CSV file and write the header row
-with open(stats_path, 'w', newline='') as csv_file:
-    writer = csv.writer(csv_file)
-    writer.writerow(column_names)
 
 # Recursively search for .mp4 files in the root_directory and its subdirectories
 mp4_files = list(filter(lambda f: f.endswith('.mp4'), os.listdir(args.video_folder)))
@@ -97,8 +83,8 @@ for index, row in compare_id_df.iterrows():
     samp_df = os.path.join(samp_dlc_analyze_path, f"{samp}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
 
     # remove outliers
-    base_filtered_df = process_csv_to_dataframe_filter(base_df)
-    samp_filtered_df = process_csv_to_dataframe_filter(samp_df)
+    base_filtered_df, base_df_shape = process_csv_to_dataframe_filter(base_df)
+    samp_filtered_df, samp_df_shape = process_csv_to_dataframe_filter(samp_df)
     
     add_distance_columns(base_filtered_df)
     add_rod_columns(base_filtered_df)
@@ -130,16 +116,16 @@ for index, row in compare_id_df.iterrows():
         (base_filtered_df['leftpaw_y']>(base_filtered_df['leftpaw_y_max'].mean() + 170)) | 
         (base_filtered_df['leftpaw_y']<(base_filtered_df['leftpaw_y_min'].mean() - 170))  
         ].index.to_list()
-    base_filtered_df = base_filtered_df.drop(base_idx)
-
+    
     samp_idx = samp_filtered_df[
         (samp_filtered_df['rightpaw_y']>(samp_filtered_df['rightpaw_y_max'].mean() + 170)) | 
         (samp_filtered_df['rightpaw_y']<(samp_filtered_df['rightpaw_y_min'].mean() - 170)) |
         (samp_filtered_df['leftpaw_y']>(samp_filtered_df['leftpaw_y_max'].mean() + 170)) | 
         (samp_filtered_df['leftpaw_y']<(samp_filtered_df['leftpaw_y_min'].mean() - 170))  
         ].index.to_list()
+    
+    base_filtered_df = base_filtered_df.drop(base_idx)
     samp_filtered_df = samp_filtered_df.drop(samp_idx)
-
 
     primary_stats_df_base, base_joint_angles_df = compute_and_add_joint_extrema(base_filtered_df, base_filtered_csv_path, n)
     primary_stats_df_samp, samp_joint_angles_df = compute_and_add_joint_extrema(samp_filtered_df, samp_filtered_csv_path, n)
@@ -171,18 +157,19 @@ for index, row in compare_id_df.iterrows():
         'JA_R': ('right_freedom_movement', 'right_flexion', 'right_drag_factor', 'right_drag_score')
     }
         
-    Mouse_Data_means_new_base, Mouse_Data_means_new_samp, joint_results = calculate_joint_results(joint_variables, Mouse_Data_means_new_base, Mouse_Data_means_new_samp, base, samp, center_grav, cog_dict)
-
-    # Convert the joint_results dictionary to a Pandas DataFrame
-    result_df = pd.DataFrame([joint_results] + [cog_dict])
+    joint_results = calculate_joint_results(joint_variables, Mouse_Data_means_new_base, Mouse_Data_means_new_samp, base, samp, center_grav, cog_dict)
+        
+    # print(json.dumps(joint_results, sort_keys=True, indent=4))
     
-    # # # Reorder columns to have 'Base ID', 'Sample ID', 'Center of Gravity' as the first three columns
-    # result_df = result_df[['Mouse ID', 'Base ID', 'Sample ID', 'Baseline Week', 'Sample Week', 'center_gravity', ] + list(joint_variables['JA_L']) + list(joint_variables['JA_R'])]
     
-    dataframe_list.append(result_df)
+    gait_analysis_rows = [
+        f"{joint_results['Mouse ID']}, {joint_results['Baseline Week']}, {joint_results['Base ID']}, {base_df_shape[0]},, {joint_results['Base H_L_TP Mean']}, {joint_results['Base H_R_TP Mean']}, {joint_results['Base JA_L Mean']}, {joint_results['Base JA_R Mean']}, {joint_results['center_gravity']},, {joint_results['JA_L Base Max']}, {joint_results['JA_L Base Min']}, {joint_results['JA_L Base Diff']}, {joint_results['JA_R Base Max']}, {joint_results['JA_R Base Min']}, {joint_results['JA_R Base Diff']}, {joint_results['left_freedom_movement']}, {joint_results['left_flexion']}, {joint_results['left_drag_factor']}, {joint_results['left_drag_score']}, {joint_results['right_freedom_movement']}, {joint_results['right_flexion']}, {joint_results['right_drag_factor']}, {joint_results['right_drag_score']},",
+        f"{joint_results['Mouse ID']}, {joint_results['Sample Week']}, {joint_results['Sample ID']}, {samp_df_shape[0]},, {joint_results['Samp H_L_TP Mean']}, {joint_results['Samp H_R_TP Mean']}, {joint_results['Samp JA_L Mean']}, {joint_results['Samp JA_R Mean']},, {joint_results['JA_L Samp Max']}, {joint_results['JA_L Samp Min']}, {joint_results['JA_L Samp Diff']}, {joint_results['JA_R Samp Max']}, {joint_results['JA_R Samp Min']}, {joint_results['JA_R Samp Diff']},,,,,,,,,",
+    ]
 
-# Concatenate all dataframes in the list
-combined_df = pd.concat(dataframe_list, ignore_index=True)
-
-# Save the combined dataframe to a CSV file
-combined_df.to_csv(os.path.join(f"{args.video_folder}_output", "combined_data.csv"), index=False)
+    # Create the CSV file and write the header rows
+    with open(stats_path, 'a', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        for header_row in gait_analysis_rows:
+            csv_row = header_row.split(",")
+            writer.writerow(csv_row)

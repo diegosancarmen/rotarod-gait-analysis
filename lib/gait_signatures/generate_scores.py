@@ -130,14 +130,19 @@ def calculate_joint_results(variables, Mouse_Data_means_new_base, Mouse_Data_mea
         base_dif = base_max - base_min
         samp_dif = samp_max - samp_min
         
-        Mouse_Data_means_new_base[joint + " Diff"] = base_dif
-        Mouse_Data_means_new_samp[joint + " Diff"] = samp_dif
-
         flexion = pcnt_change_flex(base_min, samp_min)
         freedom_movement = pcnt_change(base_dif, samp_dif)
         drag_factor = pcnt_change(base_max, samp_max)
         drag_score = drag_factor - flexion
 
+        joint_results[joint + " Base Max"] = base_max.iloc[0]
+        joint_results[joint + ' Base Min'] = base_min.iloc[0]
+        joint_results[joint + " Base Diff"] = base_dif.iloc[0]
+
+        joint_results[joint + " Samp Max"] = samp_max.iloc[0]
+        joint_results[joint + ' Samp Min'] = samp_min.iloc[0]
+        joint_results[joint + " Samp Diff"] = samp_dif.iloc[0]
+        
         joint_results[freedom_var] = f"{round(float(freedom_movement.iloc[0]), 1)}%"
         joint_results[flexion_var] = f"{round(float(flexion.iloc[0]), 1)}%"
         joint_results[drag_factor_var] = f"{round(float(drag_factor.iloc[0]), 1)}%"
@@ -146,4 +151,4 @@ def calculate_joint_results(variables, Mouse_Data_means_new_base, Mouse_Data_mea
     joint_results.update(cog_dict)
     joint_results['center_gravity'] = f"{round(float(center_grav), 1)}%"  # Assuming center_grav is in percentage
 
-    return Mouse_Data_means_new_base, Mouse_Data_means_new_samp, joint_results
+    return joint_results

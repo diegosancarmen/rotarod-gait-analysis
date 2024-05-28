@@ -65,7 +65,7 @@ def process_csv_to_dataframe_filter(csv_path):
         # df[x_column] = np.where(condition, df[x_column], np.nan)
         # df[y_column] = np.where(condition, df[y_column], np.nan)
 
-    return df
+    return df, df.shape
 
 def add_distance_columns(df):
     df['leftpaw_x_d'] = (df['tailbase_x'] - df['leftpaw_x']).abs()
