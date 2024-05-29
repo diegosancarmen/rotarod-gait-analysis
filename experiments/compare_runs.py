@@ -1,7 +1,7 @@
 """
 cd /home/coeguest/hdelacruz/DeepLabCut
 conda activate DLC_gait
-python rotarod-gait-analysis/experiments/compare_runs.py --video_folder /home/coeguest/hdelacruz/DeepLabCut/Experiment2
+python rotarod-gait-analysis/experiments/compare_runs.py --video_folder /home/coeguest/hdelacruz/DeepLabCut/Experiment2 --output_folder /home/coeguest/hdelacruz/DeepLabCut/test/test_trim
 """
 
 import os
@@ -16,7 +16,7 @@ os.environ["DLClight"]="True"
 
 import argparse
 import sys
-import json
+import cv2
 
 sys.path.append("/home/coeguest/hdelacruz/DeepLabCut/rotarod-gait-analysis")
 
@@ -64,23 +64,22 @@ os.makedirs(dlc_analyze_path, exist_ok = True)
 # Recursively search for .mp4 files in the root_directory and its subdirectories
 mp4_files = list(filter(lambda f: f.endswith('.mp4'), os.listdir(args.video_folder)))
 
-compare_id_df = pd.read_csv(comparison_csv)
+compare_id = pd.read_csv(comparison_csv)
+compare_id.columns = ["base", "base_start", "base_end", "samp", "samp_start", "samp_end"]
+compare_id[['base_start', 'samp_start']] = compare_id[['base_start', 'samp_start']].fillna(0)
 
 dataframe_list = []
 
-for index, row in compare_id_df.iterrows():
-    base = row[0]
-    samp = row[1]
-
-    base_vid_path = os.path.join(args.video_folder, base + ".mp4")
-    samp_vid_path = os.path.join(args.video_folder, samp + ".mp4")      
-
+for index, row in compare_id.iterrows():
+    base, base_start, base_end = row["base"], row["base_start"], row["base_end"]
+    samp, samp_start, samp_end = row["samp"], row["samp_start"], row["samp_end"]
+ 
     # deeplabcut.analyze videos
-    base_dlc_analyze_path = deeplabcut_analyze_video(dlc_analyze_path, base_vid_path, config_yaml)
-    samp_dlc_analyze_path = deeplabcut_analyze_video(dlc_analyze_path, samp_vid_path, config_yaml)
+    base_dlc_analyze_path, base_trim = deeplabcut_analyze_video(dlc_analyze_path, args.video_folder, base, base_start, base_end, config_yaml)
+    samp_dlc_analyze_path, samp_trim = deeplabcut_analyze_video(dlc_analyze_path, args.video_folder, samp, samp_start, samp_end, config_yaml)
     
-    base_df = os.path.join(base_dlc_analyze_path, f"{base}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
-    samp_df = os.path.join(samp_dlc_analyze_path, f"{samp}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
+    base_df = os.path.join(base_dlc_analyze_path, f"{base_trim}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
+    samp_df = os.path.join(samp_dlc_analyze_path, f"{samp_trim}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
 
     # remove outliers
     base_filtered_df, base_df_shape = process_csv_to_dataframe_filter(base_df)

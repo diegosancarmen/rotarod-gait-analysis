@@ -3,17 +3,46 @@ import pandas as pd
 import deeplabcut
 import os
 
-def deeplabcut_analyze_video(dlc_analyze_path, video_path, config):
+from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
+from moviepy.video.io.VideoFileClip import VideoFileClip
+
+# https://stackoverflow.com/a/6403077
+def to_seconds(timestr):
+    seconds= 0
+    for part in timestr.split(':'):
+        seconds= seconds*60 + int(part, 10)
+    return seconds
+
+def video_trim(video_folder, vid, start, end, dst_directory):
+
+    video_path = os.path.join(video_folder, vid + ".mp4")
+
+    with VideoFileClip(video_path) as clip:
+        duration = clip.duration
+    
+    trim_start = float(start if start == 0 else to_seconds(start))
+    trim_end = float(duration if pd.isna(end) else to_seconds(end))
+    video_name = f"{vid}_trim_{trim_start}_{trim_end}"
+    output_path = os.path.join(dst_directory, f"{video_name}.mp4")
+
+    ffmpeg_extract_subclip(video_path, trim_start, trim_end, targetname=output_path)
+    
+    return video_name
+
+def deeplabcut_analyze_video(dlc_analyze_path, video_folder, vid, start, end, config):
     config_path = config
-    dst_directory = os.path.join(dlc_analyze_path, video_path.split("/")[-1])
+    dst_directory = os.path.join(dlc_analyze_path, vid)
     if not os.path.exists(dst_directory):
         os.mkdir(dst_directory)
 
+    video_name = video_trim(video_folder, vid, start, end, dst_directory)
+    video_path = os.path.join(dst_directory, f"{video_name}.mp4")
+    
     deeplabcut.analyze_videos(config_path, [video_path], videotype='mp4', save_as_csv=True, destfolder = dst_directory, cropping= [700, 1250, 300, 900], dynamic=(True, .5, 10))
     deeplabcut.filterpredictions(config_path, [video_path], destfolder = dst_directory, filtertype='arima')
     deeplabcut.analyze_videos_converth5_to_csv(dlc_analyze_path, videotype='mp4')
 
-    return dst_directory
+    return dst_directory, video_name
 
 def process_csv_to_dataframe_filter(csv_path):
     dataframe = pd.read_csv(csv_path)
