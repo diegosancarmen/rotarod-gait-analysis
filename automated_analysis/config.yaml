@@ -1,0 +1,75 @@
+Task: Trial9
+TrainingFraction:
+- 0.95
+alphavalue: 0.7
+batch_size: 8
+bodyparts: MULTI!
+colormap: rainbow
+corner2move2:
+- 50
+- 50
+cropping: false
+date: May23
+default_augmenter: multi-animal-imgaug
+default_net_type: dlcrnet_ms5
+default_track_method: ellipse
+dotsize: 12
+identity: false
+individuals:
+- individual1
+iteration: 2
+move2corner: true
+multianimalbodyparts:
+- leftpaw
+- leftankle
+- leftknee
+- tailbase
+- tailtip
+- rightknee
+- rightankle
+- rightpaw
+- frontleftpaw
+- frontleftelbow
+- earleft
+- mouth
+- earright
+- frontrightelbow
+- frontrightpaw
+multianimalproject: true
+numframes2pick: 20
+pcutoff: 0.9
+project_path: /home/coeguest/hdelacruz/DeepLabCut/rotarod-gait-analysis/automated_analysis
+scorer: JDC
+skeleton:
+- - leftpaw
+  - leftankle
+- - leftankle
+  - leftknee
+- - rightpaw
+  - rightankle
+- - rightankle
+  - rightknee
+skeleton_color: white
+snapshotindex: all
+start: 0
+stop: 1
+uniquebodyparts:
+- rodleft
+- rodright
+video_sets:
+  C:\Users\delacruz\Downloads\Trial9B-JDC-2022-05-23\videos\FILE0964_D166_A2_aMSH_Occluded.mp4:
+    crop: 0, 1920, 0, 1080
+  C:\Users\delacruz\Downloads\Trial9B-JDC-2022-05-23\videos\FILE1010_D175_E3_pre_TrimA.mp4:
+    crop: 0, 1920, 0, 1080
+  C:\Users\delacruz\Downloads\Trial9B-JDC-2022-05-23\videos\FILE1020_D175_D1_PRAM-6HR_TrimA.mp4:
+    crop: 0, 1920, 0, 1080
+  C:\Users\delacruz\Downloads\Trial9B-JDC-2022-05-23\videos\FILE1077_D194_A2_aMSH.mp4:
+    crop: 0, 1920, 0, 1080
+  C:\Users\delacruz\Trial9-JDC-2022-05-23\videos\FILE0595_C1_pre-aCSF_TrimA.mp4:
+    crop: 0, 1920, 0, 1080
+  C:\Users\delacruz\Trial9-JDC-2022-05-23\videos\FILE0963_D166_C1_aCSF_TrimA.mp4:
+    crop: 0, 1920, 0, 1080
+x1: 700
+x2: 1250
+y1: 300
+y2: 900

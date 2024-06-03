@@ -18,7 +18,11 @@ import argparse
 import sys
 import cv2
 
-sys.path.append("/home/coeguest/hdelacruz/DeepLabCut/rotarod-gait-analysis")
+root_path = os.path.dirname(
+                os.path.dirname(
+                    os.path.abspath(__file__)))
+
+sys.path.append(root_path)
 
 from lib.gait_signatures.primary_analysis import deeplabcut_analyze_video, process_csv_to_dataframe_filter, add_distance_columns, add_rod_columns
 from lib.gait_signatures.generate_scores import add_extrema_columns, compute_and_add_joint_extrema, calculate_and_append_data_means, calculate_joint_results, pcnt_change
@@ -55,7 +59,7 @@ with open(stats_path, 'w', newline='') as csv_file:
     
 comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
 
-config_yaml = "/home/coeguest/hdelacruz/DeepLabCut/automated_analysis/config.yaml"
+config_yaml = os.path.join(root_path, "/automated_analysis/config.yaml")
 dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
 
 os.makedirs(output_folder, exist_ok = True)
