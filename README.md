@@ -3,11 +3,15 @@
 ## About 
 This program uses a trained DeepLabCut model to perform pose estimation on recorded rotarod runs from a Parkinson's Disease mouse model [1]. The output data is then analyzed using NumPy and Pandas to return the scores for the gait signatures defined in Dela Cruz, et al. (2020). 
 
-## How to Use
+## Prepare Environment
 
 Before the first use only, run `python setup.py` to update tracking folder home directory.
 
 To create the conda environment: `conda env create -f DEEPLABCUT.yaml`
+
+Download model weights from [this link](https://drive.google.com/drive/folders/1UmC0r9P78xBL41j9dniOAimbiRw42LPc?usp=sharing) into the folder `rotarod-gait-analysis/automated_analysis/dlc-models/iteration-2/Trial9May23-trainset95shuffle1/train`
+
+## How to Use
 
 Prepare a video folder containing the videos of interest and a .csv file containing the video filenames, start time (optional), and end time (optional). See `comparison_id.csv` template for an example (feel free to download). 
 
