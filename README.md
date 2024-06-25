@@ -5,11 +5,11 @@ This program uses a trained DeepLabCut model to perform pose estimation on recor
 
 ## Prepare Environment
 
-Before the first use only, run `python setup.py` to update tracking folder home directory.
-
-To create the conda environment: `conda env create -f DEEPLABCUT.yaml`
+To create the conda environment: `conda env create -f DLC_gait.yaml`
 
 Download model weights from [this link](https://drive.google.com/drive/folders/1UmC0r9P78xBL41j9dniOAimbiRw42LPc?usp=sharing) into the folder `rotarod-gait-analysis/automated_analysis/dlc-models/iteration-2/Trial9May23-trainset95shuffle1/train`
+
+Before the first use only, run `python setup.py` to update tracking folder home directory.
 
 ## How to Use
 
