@@ -1,7 +1,7 @@
 """
 cd /home/coeguest/hdelacruz/DeepLabCut
 conda activate DLC_gait
-python rotarod-gait-analysis/experiments/compare_runs.py --video_folder /home/coeguest/hdelacruz/DeepLabCut/Experiment2 --output_folder /home/coeguest/hdelacruz/DeepLabCut/test/test_trim
+python rotarod-gait-analysis/experiments/compare_runs.py --video_folder /home/coeguest/hdelacruz/DeepLabCut/sample --output_folder /home/coeguest/hdelacruz/DeepLabCut/test/
 """
 
 import os
@@ -24,7 +24,7 @@ root_path = os.path.dirname(
 
 sys.path.append(root_path)
 
-from lib.gait_signatures.primary_analysis import deeplabcut_analyze_video, process_csv_to_dataframe_filter, add_distance_columns, add_rod_columns
+from lib.gait_signatures.primary_analysis import deeplabcut_analyze_video, video_array, process_csv_to_dataframe_filter, add_distance_columns, add_rod_columns
 from lib.gait_signatures.generate_scores import add_extrema_columns, compute_and_add_joint_extrema, calculate_and_append_data_means, calculate_joint_results, pcnt_change
 
 parser = argparse.ArgumentParser()
@@ -40,7 +40,17 @@ if args.output_folder is None:
     output_folder = args.video_folder + "_output"
 else:
     output_folder = args.output_folder
-    
+
+comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
+
+config_yaml = os.path.join(root_path, "automated_analysis/config.yaml")
+dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
+vid_collage_path = os.path.join(output_folder, "video_array")
+
+os.makedirs(output_folder, exist_ok = True)
+os.makedirs(dlc_analyze_path, exist_ok = True)
+os.makedirs(vid_collage_path, exist_ok = True)
+
 # Column names
 row_headers = [
     "Mouse ID,,,,,Paw-Tail Distance,, Ankle Joint Angle,, CoG Pre-Score,, FOM Ankle Joint Angle,,,,,,Left Leg,,,,Right Leg,,,,", 
@@ -57,14 +67,6 @@ with open(stats_path, 'w', newline='') as csv_file:
         csv_row = header_row.split(",")
         writer.writerow(csv_row)
     
-comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
-
-config_yaml = os.path.join(root_path, "/automated_analysis/config.yaml")
-dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
-
-os.makedirs(output_folder, exist_ok = True)
-os.makedirs(dlc_analyze_path, exist_ok = True)
-
 # Recursively search for .mp4 files in the root_directory and its subdirectories
 mp4_files = list(filter(lambda f: f.endswith('.mp4'), os.listdir(args.video_folder)))
 
@@ -81,6 +83,8 @@ for index, row in compare_id.iterrows():
     # deeplabcut.analyze videos
     base_dlc_analyze_path, base_trim = deeplabcut_analyze_video(dlc_analyze_path, args.video_folder, base, base_start, base_end, config_yaml)
     samp_dlc_analyze_path, samp_trim = deeplabcut_analyze_video(dlc_analyze_path, args.video_folder, samp, samp_start, samp_end, config_yaml)
+    
+    base_samp_collage = video_array(base_dlc_analyze_path, base_trim, samp_dlc_analyze_path, samp_trim, vid_collage_path)
     
     base_df = os.path.join(base_dlc_analyze_path, f"{base_trim}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
     samp_df = os.path.join(samp_dlc_analyze_path, f"{samp_trim}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")

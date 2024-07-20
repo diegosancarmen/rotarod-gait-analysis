@@ -41,6 +41,7 @@ dependencies:
     - certifi==2022.6.15
     - chardet==3.0.4
     - cycler==0.11.0
+    - decorator==4.0.2
     - deeplabcut==2.2.1.1
     - DLC2Kinematics==0.0.3
     - filterpy==1.4.5
@@ -53,7 +54,8 @@ dependencies:
     - grpcio==1.46.3
     - h5py==3.1.0
     - idna==2.10
-    - imageio==2.4.1
+    - imageio==2.5.0
+    - imageio-ffmpeg==0.5.1
     - imgaug==0.4.0
     - importlib-metadata==4.11.4
     - intel-openmp==2022.1.0
@@ -67,7 +69,7 @@ dependencies:
     - llvmlite==0.38.1
     - Markdown==3.3.7
     - matplotlib==3.5.2
-    - moviepy==1.0.3
+    - moviepy==1.0.0
     - msgpack==1.0.4
     - msgpack-numpy==0.4.8
     - networkx==2.6.3

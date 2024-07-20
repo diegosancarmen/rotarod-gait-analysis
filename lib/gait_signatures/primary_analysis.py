@@ -2,9 +2,11 @@ import numpy as np
 import pandas as pd
 import deeplabcut
 import os
+import moviepy
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.compositing.CompositeVideoClip import clips_array
 
 # https://stackoverflow.com/a/6403077
 def to_seconds(timestr):
@@ -25,7 +27,11 @@ def video_trim(video_folder, vid, start, end, dst_directory):
     video_name = f"{vid}_trim_{trim_start}_{trim_end}"
     output_path = os.path.join(dst_directory, f"{video_name}.mp4")
 
-    ffmpeg_extract_subclip(video_path, trim_start, trim_end, targetname=output_path)
+    if os.path.isfile(output_path):
+        print(f"Video has already been trimmed: {video_name}")
+        return video_name
+    else:
+        ffmpeg_extract_subclip(video_path, trim_start, trim_end, targetname=output_path)
     
     return video_name
 
@@ -43,6 +49,23 @@ def deeplabcut_analyze_video(dlc_analyze_path, video_folder, vid, start, end, co
     deeplabcut.analyze_videos_converth5_to_csv(dlc_analyze_path, videotype='mp4')
 
     return dst_directory, video_name
+
+def video_array(base_vid_root_pth, base_vid_name, samp_vid_root_pth, samp_vid_name, output_dir):
+    
+    base_vid_pth = os.path.join(base_vid_root_pth, f"{base_vid_name}.mp4")
+    samp_vid_pth = os.path.join(samp_vid_root_pth, f"{samp_vid_name}.mp4")
+        
+    base_vid = VideoFileClip(base_vid_pth)
+    samp_vid = VideoFileClip(samp_vid_pth)
+    
+    video_array_pth = os.path.join(output_dir, f"{base_vid_name}_{samp_vid_name}_collage.mp4")
+    
+    if os.path.isfile(video_array_pth):
+        print(f"Collage has already been created: {base_vid_name}_{samp_vid_name}_collage.mp4")
+    else:
+        combined = clips_array([[base_vid, samp_vid]])
+        # Write the output video file
+        combined.write_videofile(video_array_pth, fps=combined.fps)
 
 def process_csv_to_dataframe_filter(csv_path):
     dataframe = pd.read_csv(csv_path)
