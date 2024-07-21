@@ -71,7 +71,7 @@ with open(stats_path, 'w', newline='') as csv_file:
     
 comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
 
-config_yaml = os.path.join(root_path, "/automated_analysis/config.yaml")
+config_yaml = os.path.join(root_path, "automated_analysis/config.yaml")
 dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
 
 os.makedirs(output_folder, exist_ok = True)
