@@ -33,18 +33,18 @@ def video_trim(video_folder, vid, start, end, dst_directory):
         return video_name
     else:
         
-    # FFmpeg command to extract video only
-    cmd = ['ffmpeg', '-i', video_path, '-map', '0:v', '-c:v', 'copy', video_extract_path]
+        # FFmpeg command to extract video only
+        cmd = ['ffmpeg', '-i', video_path, '-map', '0:v', '-c:v', 'copy', video_extract_path]
 
-    try:
-        subprocess.run(cmd, check=True)
-        print(f"Video extracted: {video_extract_path}")
-    except subprocess.CalledProcessError as e:
-        print(f"Error occurred: {e}")
+        try:
+            subprocess.run(cmd, check=True)
+            print(f"Video extracted: {video_extract_path}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error occurred: {e}")
 
-    ffmpeg_extract_subclip(video_extract_path, trim_start, trim_end, targetname=output_path)
+        ffmpeg_extract_subclip(video_extract_path, trim_start, trim_end, targetname=output_path)
 
-    os.remove(video_extract_path)
+        os.remove(video_extract_path)
     
     return video_name
 
