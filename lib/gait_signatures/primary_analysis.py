@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import deeplabcut
 import os
+import subprocess
 import moviepy
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
@@ -26,12 +27,24 @@ def video_trim(video_folder, vid, start, end, dst_directory):
     trim_end = float(duration if pd.isna(end) else to_seconds(end))
     video_name = f"{vid}_trim_{trim_start}_{trim_end}"
     output_path = os.path.join(dst_directory, f"{video_name}.mp4")
-
+    video_extract_path = os.path.join(dst_directory, f"{vid}.mp4")
     if os.path.isfile(output_path):
         print(f"Video has already been trimmed: {video_name}")
         return video_name
     else:
-        ffmpeg_extract_subclip(video_path, trim_start, trim_end, targetname=output_path)
+        
+    # FFmpeg command to extract video only
+    cmd = ['ffmpeg', '-i', video_path, '-map', '0:v', '-c:v', 'copy', video_extract_path]
+
+    try:
+        subprocess.run(cmd, check=True)
+        print(f"Video extracted: {video_extract_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred: {e}")
+
+    ffmpeg_extract_subclip(video_extract_path, trim_start, trim_end, targetname=output_path)
+
+    os.remove(video_extract_path)
     
     return video_name
 

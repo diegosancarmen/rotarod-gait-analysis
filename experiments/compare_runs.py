@@ -57,6 +57,8 @@ row_headers = [
     "Name, Induction Week, File ID#, Frame #,, H_L_TP Mean, H_R_TP Mean, JA_L Mean, JA_R Mean,, , JA_L Max, JA_L Min, JA_L Diff, JA_R Max, JA_R Min, JA_R Diff, % Change (FOM), Flexion Decline, Drag Factor, Drag Score, % Change (FOM), Flexion Decline, Drag Factor, Drag Score,"
     ]
 
+os.makedirs(output_folder, exist_ok = True)
+
 # Path to save the CSV file
 stats_path = os.path.join(output_folder, 'gait_metrics.csv')
     
@@ -67,6 +69,14 @@ with open(stats_path, 'w', newline='') as csv_file:
         csv_row = header_row.split(",")
         writer.writerow(csv_row)
     
+comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
+
+config_yaml = os.path.join(root_path, "/automated_analysis/config.yaml")
+dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
+
+os.makedirs(output_folder, exist_ok = True)
+os.makedirs(dlc_analyze_path, exist_ok = True)
+
 # Recursively search for .mp4 files in the root_directory and its subdirectories
 mp4_files = list(filter(lambda f: f.endswith('.mp4'), os.listdir(args.video_folder)))
 
@@ -171,7 +181,7 @@ for index, row in compare_id.iterrows():
     
     gait_analysis_rows = [
         f"{joint_results['Mouse ID']}, {joint_results['Baseline Week']}, {joint_results['Base ID']}, {base_df_shape[0]},, {joint_results['Base H_L_TP Mean']}, {joint_results['Base H_R_TP Mean']}, {joint_results['Base JA_L Mean']}, {joint_results['Base JA_R Mean']}, {joint_results['center_gravity']},, {joint_results['JA_L Base Max']}, {joint_results['JA_L Base Min']}, {joint_results['JA_L Base Diff']}, {joint_results['JA_R Base Max']}, {joint_results['JA_R Base Min']}, {joint_results['JA_R Base Diff']}, {joint_results['left_freedom_movement']}, {joint_results['left_flexion']}, {joint_results['left_drag_factor']}, {joint_results['left_drag_score']}, {joint_results['right_freedom_movement']}, {joint_results['right_flexion']}, {joint_results['right_drag_factor']}, {joint_results['right_drag_score']},",
-        f"{joint_results['Mouse ID']}, {joint_results['Sample Week']}, {joint_results['Sample ID']}, {samp_df_shape[0]},, {joint_results['Samp H_L_TP Mean']}, {joint_results['Samp H_R_TP Mean']}, {joint_results['Samp JA_L Mean']}, {joint_results['Samp JA_R Mean']},, {joint_results['JA_L Samp Max']}, {joint_results['JA_L Samp Min']}, {joint_results['JA_L Samp Diff']}, {joint_results['JA_R Samp Max']}, {joint_results['JA_R Samp Min']}, {joint_results['JA_R Samp Diff']},,,,,,,,,",
+        f"{joint_results['Mouse ID']}, {joint_results['Sample Week']}, {joint_results['Sample ID']}, {samp_df_shape[0]},, {joint_results['Samp H_L_TP Mean']}, {joint_results['Samp H_R_TP Mean']}, {joint_results['Samp JA_L Mean']}, {joint_results['Samp JA_R Mean']},,, {joint_results['JA_L Samp Max']}, {joint_results['JA_L Samp Min']}, {joint_results['JA_L Samp Diff']}, {joint_results['JA_R Samp Max']}, {joint_results['JA_R Samp Min']}, {joint_results['JA_R Samp Diff']},,,,,,,,,",
     ]
 
     # Create the CSV file and write the header rows
