@@ -31,6 +31,7 @@ libclang==14.0.1
 llvmlite==0.38.1
 Markdown==3.3.7
 matplotlib==3.5.2
+moviepy==1.0.0
 msgpack==1.0.4
 msgpack-numpy==0.4.8
 networkx==2.6.3
