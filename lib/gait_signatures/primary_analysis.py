@@ -6,8 +6,7 @@ import subprocess
 import moviepy
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-# from moviepy.video.io.VideoFileClip import VideoFileClip
-import moviepy.video.io.VideoFileClip
+from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.compositing.CompositeVideoClip import clips_array
 
 # https://stackoverflow.com/a/6403077
