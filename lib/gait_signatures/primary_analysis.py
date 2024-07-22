@@ -6,7 +6,8 @@ import subprocess
 import moviepy
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-from moviepy.video.io.VideoFileClip import VideoFileClip
+# from moviepy.video.io.VideoFileClip import VideoFileClip
+import moviepy.video.io.VideoFileClip
 from moviepy.video.compositing.CompositeVideoClip import clips_array
 
 # https://stackoverflow.com/a/6403077
@@ -68,15 +69,17 @@ def video_array(base_vid_root_pth, base_vid_name, samp_vid_root_pth, samp_vid_na
     base_vid_pth = os.path.join(base_vid_root_pth, f"{base_vid_name}.mp4")
     samp_vid_pth = os.path.join(samp_vid_root_pth, f"{samp_vid_name}.mp4")
         
-    base_vid = VideoFileClip(base_vid_pth).margin(10).crop(x1 = 700, x2 = 1250, y1 = 300, y2 = 900)
-    samp_vid = VideoFileClip(samp_vid_pth).margin(10).crop(x1 = 700, x2 = 1250, y1 = 300, y2 = 900)
-    
+    base_vid = VideoFileClip(base_vid_pth)
+    base_vid_cropped = crop(base_vid, x1 = 700, x2 = 1250, y1 = 300, y2 = 900)
+    samp_vid = VideoFileClip(samp_vid_pth)
+    samp_vid_cropped = crop(samp_vid, x1 = 700, x2 = 1250, y1 = 300, y2 = 900)
+
     video_array_pth = os.path.join(output_dir, f"{base_vid_name}_{samp_vid_name}_collage.mp4")
     
     if os.path.isfile(video_array_pth):
         print(f"Collage has already been created: {base_vid_name}_{samp_vid_name}_collage.mp4")
     else:
-        combined = clips_array([[base_vid, samp_vid]])
+        combined = clips_array([[base_vid_cropped, samp_vid_cropped]])
         # Write the output video file
         combined.write_videofile(video_array_pth, fps=combined.fps)
 
