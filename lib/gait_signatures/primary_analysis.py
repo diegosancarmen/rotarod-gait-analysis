@@ -68,8 +68,8 @@ def video_array(base_vid_root_pth, base_vid_name, samp_vid_root_pth, samp_vid_na
     base_vid_pth = os.path.join(base_vid_root_pth, f"{base_vid_name}.mp4")
     samp_vid_pth = os.path.join(samp_vid_root_pth, f"{samp_vid_name}.mp4")
         
-    base_vid = VideoFileClip(base_vid_pth)
-    samp_vid = VideoFileClip(samp_vid_pth)
+    base_vid = VideoFileClip(base_vid_pth).margin(10).crop(x1 = 700, x2 = 1250, y1 = 300, y2 = 900)
+    samp_vid = VideoFileClip(samp_vid_pth).margin(10).crop(x1 = 700, x2 = 1250, y1 = 300, y2 = 900)
     
     video_array_pth = os.path.join(output_dir, f"{base_vid_name}_{samp_vid_name}_collage.mp4")
     
