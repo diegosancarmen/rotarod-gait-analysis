@@ -8,6 +8,7 @@ import moviepy
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.compositing.CompositeVideoClip import clips_array
+from moviepy.video.fx.all import crop
 
 # https://stackoverflow.com/a/6403077
 def to_seconds(timestr):
