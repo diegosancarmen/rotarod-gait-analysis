@@ -93,9 +93,7 @@ for index, row in compare_id.iterrows():
     # deeplabcut.analyze videos
     base_dlc_analyze_path, base_trim = deeplabcut_analyze_video(dlc_analyze_path, args.video_folder, base, base_start, base_end, config_yaml)
     samp_dlc_analyze_path, samp_trim = deeplabcut_analyze_video(dlc_analyze_path, args.video_folder, samp, samp_start, samp_end, config_yaml)
-    
-    base_samp_collage = video_array(base_dlc_analyze_path, base_trim, samp_dlc_analyze_path, samp_trim, vid_collage_path)
-    
+        
     base_df = os.path.join(base_dlc_analyze_path, f"{base_trim}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
     samp_df = os.path.join(samp_dlc_analyze_path, f"{samp_trim}DLC_dlcrnetms5_Trial9May23shuffle1_150000_el_filtered.csv")
 
@@ -190,3 +188,5 @@ for index, row in compare_id.iterrows():
         for header_row in gait_analysis_rows:
             csv_row = header_row.split(",")
             writer.writerow(csv_row)
+
+    base_samp_collage = video_array(base_dlc_analyze_path, base_trim, samp_dlc_analyze_path, samp_trim, vid_collage_path)
