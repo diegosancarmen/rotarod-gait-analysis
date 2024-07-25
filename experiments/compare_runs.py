@@ -80,6 +80,18 @@ os.makedirs(dlc_analyze_path, exist_ok = True)
 # Recursively search for .mp4 files in the root_directory and its subdirectories
 mp4_files = list(filter(lambda f: f.endswith('.mp4'), os.listdir(args.video_folder)))
 
+for file in mp4_files:
+    # Get the full path of the file
+    full_path = os.path.join(args.video_folder, file)
+    
+    # Remove the current extension and add .mp4
+    new_name = os.path.splitext(file)[0] + ".mp4"
+    new_full_path = os.path.join(args.video_folder, new_name)
+    
+    # Rename the file
+    os.rename(full_path, new_full_path)
+    print(f"Renamed {full_path} to {new_full_path}")
+
 compare_id = pd.read_csv(comparison_csv)
 compare_id.columns = ["base", "base_start", "base_end", "samp", "samp_start", "samp_end"]
 compare_id[['base_start', 'samp_start']] = compare_id[['base_start', 'samp_start']].fillna(0)
