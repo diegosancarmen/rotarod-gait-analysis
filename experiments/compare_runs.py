@@ -74,11 +74,8 @@ comparison_csv = os.path.join(args.video_folder, "comparison_id.csv")
 config_yaml = os.path.join(root_path, "automated_analysis/config.yaml")
 dlc_analyze_path = os.path.join(output_folder, "deeplabcut.analyze")
 
-os.makedirs(output_folder, exist_ok = True)
-os.makedirs(dlc_analyze_path, exist_ok = True)
-
 # Recursively search for .mp4 files in the root_directory and its subdirectories
-mp4_files = list(filter(lambda f: f.endswith('.mp4'), os.listdir(args.video_folder)))
+mp4_files = list(filter(lambda f: f.lower().endswith('.mp4'), os.listdir(args.video_folder)))
 
 for file in mp4_files:
     # Get the full path of the file
